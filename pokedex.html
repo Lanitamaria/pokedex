@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <title>Pokedex</title>
+    <style>
+      .card {
+        float: left;
+
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <h1>Pokedex</h1>
+        <div id="pokedex"></div>
+        <div class="w-20">
+            <button id="more-pokemons" class="btn btn-success" data-nexturl="">¡Quiero ver más pokémon!</button>
+        </div>
+    </div>
+
+  <!-- Modal -->
+  <div class="modal fade" id="pokemonModal" tabindex="-1" role="dialog" aria-labelledby="pokemonModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="pokemonModalLabel">Modal title</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <div>
+                <h5>Tipos</h5>
+                <ol id="pokemon-types"></ol>
+            </div>
+
+            <div>
+                <h5>Habilidades</h5>
+                <ol id="pokemon-abilities"></ol>
+            </div>
+
+            <div>
+                <h5>5 primeros movimientos</h5>
+                <ol id="pokemon-moves"></ol>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal type -->
+  <div class="modal fade" id="pokemonTypeModal" tabindex="-1" role="dialog" aria-labelledby="pokemonTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title" id="pokemonTypeModalLabel">Daño</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            <strong>Daño Doble Recibido</strong>
+            <ul id="double_damage_from"></ul>
+            <strong>Daño Doble Dado</strong>
+            <ul id="double_damage_to"></ul>
+            <strong>Daño Mitad Recibido</strong>
+            <ul id="half_damage_from"></ul>
+            <strong>Daño Mitad Dado</strong>
+            <ul id="half_damage_to"></ul>
+            <strong>No Daño Recibido</strong>
+            <ul id="no_damage_from"></ul>
+            <strong>No Daño Dado</strong>
+            <ul id="no_damage_to"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal daño -->
+    <div class="modal fade" id="pokemonAbilityModal" tabindex="-1" role="dialog" aria-labelledby="pokemonAbilityModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="pokemonAbilityModalLabel">Habilidades</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <strong>Pokemones</strong>
+                <ul id="pokemons_same_abilities"></ul>
+            </div>
+            </div>
+        </div>
+        </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+    <script>
+        $(document).ready(function(){
+            getPokemones("https://pokeapi.co/api/v2/pokemon/")
+
+            $("#more-pokemons").click(function(){
+                getPokemones( this.dataset.nexturl)
+            })
+
+            $('#pokedex').click(function(event){
+                if(event.target.dataset.pokemon){
+                    var pokemon_name = event.target.dataset.pokemon
+                    var pokemon_url = event.target.dataset.pokemonurl
+                    $("#pokemonModalLabel").html( pokemon_name )
+                    getDataPokemon(pokemon_url)
+                }
+            })
+        })
+
+        $('#pokemon-types').click(function(event){
+            if(event.target.dataset.type){
+                url_types = 'https://pokeapi.co/api/v2/type/'+event.target.dataset.type
+                damageData(url_types)
+            }
+        })
+
+        $('#pokemon-abilities').click(function(event){
+            if(event.target.dataset.ability){
+                url_abilities = 'https://pokeapi.co/api/v2/ability/'+event.target.dataset.ability
+                otherPokemonsWithAbility(url_abilities)
+            }
+        })
+
+        function otherPokemonsWithAbility(url){
+            $("#pokemons_same_abilities").html("")
+
+            fetch(url)
+            .then(function(response){
+                return response.json()
+            })
+            .then(function(resp){
+                resp.pokemon.forEach(function(data){
+                    $("#pokemons_same_abilities").append("<li>"+data.pokemon.name+"</li>")
+                })
+            })
+            $("#pokemonAbilityModal").modal('show')
+        }
+
+        function damageData(url){
+            $("#double_damage_from").html('')
+            $("#double_damage_to").html('')
+            $("#half_damage_from").html('')
+            $("#half_damage_to").html('')
+            $("#no_damage_from").html('')
+            $("#no_damage_to").html('')
+
+            fetch(url)
+            .then(function(response){
+                return response.json()
+            })
+            .then(function(data){
+                addDamageLi(data.damage_relations.double_damage_from,'double_damage_from')
+                addDamageLi(data.damage_relations.double_damage_to,'double_damage_to')
+                addDamageLi(data.damage_relations.half_damage_from,'half_damage_from')
+                addDamageLi(data.damage_relations.half_damage_to,'half_damage_to')
+                addDamageLi(data.damage_relations.no_damage_from,'no_damage_from')
+                addDamageLi(data.damage_relations.no_damage_to,'no_damage_to')
+            })
+            $("#pokemonTypeModal").modal('show')
+        }
+
+        function addDamageLi(data, ul_id){
+            data.forEach(function(damage){
+                $("#"+ul_id).append("<li>"+damage.name+"</li>")
+            })
+        }
+
+        function getDataPokemon(pokemon_url){
+            $("#pokemon-types").html("")
+            $("#pokemon-abilities").html("")
+            $("#pokemon-moves").html("")
+
+            fetch(pokemon_url)
+                .then(function(data_result){
+                    return data_result.json()
+                })
+                .then(function(data){
+                    data.types.forEach(function(result){
+                        $("#pokemon-types").append("<li>"+result.type.name+"</li>")
+                        temp_button = "<button class='btn btn-info btn-sm' data-type='"+result.type.name+"'>Ver relaciones de daño</button>"
+                        $("#pokemon-types").append(temp_button)
+                    })
+
+                    data.abilities.forEach(function(result){
+                        $("#pokemon-abilities").append("<li>"+result.ability.name+"</li>")
+                        temp_button = "<button class='btn btn-warning btn-sm' data-ability='"+result.ability.name+"'>Otros pokémon que tienen esta habilidad</button>"
+                        $("#pokemon-abilities").append(temp_button)
+                    })
+
+                    i = 0
+                    data.moves.forEach(function(result){
+                        i++;
+                        if(i < 6){
+                            $("#pokemon-moves").append("<li>"+result.move.name+"</li>")
+                        }
+                    })
+                })        
+        }
+
+        function getPokemones(url){
+            fetch(url)
+                .then(function(res){
+                    return res.json()
+                }).then(function(data){
+                    data.results.forEach(function(pokemon){
+                        addPokemon(pokemon)
+                    })
+                    $("#more-pokemons").attr('data-nexturl', data.next)
+                })
+        }
+
+        function addPokemon(pokemon){
+            $("#pokedex").append(
+                '<div class="card w-20 mb-2 mr-1">'+
+                    '<div class="card-body">'+
+                        '<h5 class="card-title">'+pokemon.name+'</h5>'+
+                        '<a href="#" class="btn-modal-pokemon btn btn-primary float-right" data-toggle="modal" data-target="#pokemonModal" data-pokemonurl="'+pokemon.url+'" data-pokemon="'+pokemon.name+'">¡Quiero saber más!</a>'+
+                    '</div>'+
+                '</div>'
+            )
+        }
+
+    </script>
+
+  </body>
+</html>
